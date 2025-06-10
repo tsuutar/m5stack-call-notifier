@@ -1,0 +1,32 @@
+# 念のため、Arduino IDEのデフォルトのスケッチフォルダを除外
+/sketchbook/
+
+# コンパイルによって生成される中間ファイルやバイナリファイル
+/build/
+*.hex
+*.elf
+*.bin
+*.eep
+*.map
+
+# Arduino IDEの設定ファイル
+/.vscode/
+*.cpp.*
+*.h.*
+
+# 一時的なファイル（OSごとに異なる場合があります）
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Linux
+*~
+
+# Arduinoのパスワードやシリアル設定など
+arduino_secrets.h
+!arduino_secrets.h.example
+
+# その他 IDE 固有のファイル（場合によって異なる場合あり）
+*.arduinocache/
