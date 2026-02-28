@@ -265,10 +265,17 @@ void sendMessage(const String& content) {
   client.println();
   client.println(message);
 
+  // レスポンスの読み取り
   while (client.connected()) {
     String line = client.readStringUntil('\n');
     if (line == "\r") break;  // HTTPヘッダーの終わり
   }
+  // レスポンスボディを読み捨てる（SSL clientの内部状態を整合させる）
+  while (client.available()) {
+    client.read();
+  }
+  // SSL接続を閉じる（メモリリーク防止）
+  client.stop();
   Serial.println("Message sent!");
 }
 
@@ -409,26 +416,26 @@ bool WiFiLoop() {
     }
   } else {
     //クライアントからの要求まち
-    WiFiClient client = server.available();
-    if (!client) {
+    WiFiClient wifiClient = server.available();
+    if (!wifiClient) {
       return false;
     }
     Serial.println("");
     Serial.println("New client");
 
     //クライアント接続中は維持
-    while (client.connected()) {
-      if (client.available()) { //受信まで待機
+    while (wifiClient.connected()) {
+      if (wifiClient.available()) { //受信まで待機
         String req = "";
         String res = "";
         String path = "";
 
         //リクエスト受信(1行分)
-        req = client.readStringUntil('\r');
+        req = wifiClient.readStringUntil('\r');
         Serial.println("Request(line): " + req);
 
         // クライアント側のIPアドレス
-        IPAddress remoteIp = client.remoteIP();
+        IPAddress remoteIp = wifiClient.remoteIP();
         String remoteIpStr = String(remoteIp[0]) + '.' + String(remoteIp[1]) + '.' + String(remoteIp[2]) + '.' + String(remoteIp[3]);
         Serial.println("remoteIp: " + remoteIpStr);
 
@@ -537,18 +544,18 @@ bool WiFiLoop() {
           //データ部の受信
           char buf[257];
           int n;
-          while(client.available()){
+          while(wifiClient.available()){
             //HTTPヘッダとデータ部の区切りまでシーク後受信
-            req = client.readStringUntil('\n');
+            req = wifiClient.readStringUntil('\n');
             if(req.length() == 1 && req[0] == '\r'){
               //データの受信開始
               req = "";
-              while (n = client.available()) {
+              while (n = wifiClient.available()) {
                 if (n < 256){
-                  client.readBytes(buf,n);
+                  wifiClient.readBytes(buf,n);
                   buf[n] = 0;
                 } else {
-                  client.readBytes(buf,256) ;
+                  wifiClient.readBytes(buf,256) ;
                   buf[256] = 0;
                 }
                 req += buf;
@@ -651,9 +658,9 @@ bool WiFiLoop() {
           res = "HTTP/1.1 302 Found\r\nLocation: http://192.168.4.1/\r\n\r\n";
         }
         //レスポンスの送信
-        client.print(res);
-        client.flush();
-        client.stop();
+        wifiClient.print(res);
+        wifiClient.flush();
+        wifiClient.stop();
       }
     }
     Serial.println("Done with client");
